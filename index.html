@@ -247,6 +247,18 @@
         border: 1px solid rgba(240, 147, 251, 0.3);
       }
 
+      .filename-preview {
+        background: rgba(102, 126, 234, 0.1);
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        border-radius: 10px;
+        padding: 12px;
+        margin: 15px 0;
+        font-size: 14px;
+        color: #667eea;
+        font-weight: 600;
+        display: none;
+      }
+
       @media (max-width: 600px) {
         .container {
           padding: 20px;
@@ -299,6 +311,9 @@
             required
           />
         </div>
+        <div id="filenamePreview" class="filename-preview">
+          📁 Nama file: <span id="filenameText">-</span>
+        </div>
       </div>
 
       <div class="camera-section">
@@ -347,6 +362,8 @@
       const namaInput = document.getElementById("nama");
       const tanggalLahirInput = document.getElementById("tanggal_lahir");
       const asalSekolahInput = document.getElementById("asal_sekolah");
+      const filenamePreview = document.getElementById("filenamePreview");
+      const filenameText = document.getElementById("filenameText");
 
       let stream = null;
       let currentFacingMode = "user"; // 'user' for front camera, 'environment' for back camera
@@ -381,6 +398,39 @@
           day: "numeric",
         };
         return date.toLocaleDateString("id-ID", options);
+      }
+
+      function formatTanggalForFilename(dateString) {
+        const date = new Date(dateString);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
+
+      function generateFilename() {
+        const nama = namaInput.value.trim();
+        const tanggalLahir = tanggalLahirInput.value;
+        const asalSekolah = asalSekolahInput.value.trim();
+
+        if (nama && tanggalLahir && asalSekolah) {
+          const formattedDate = formatTanggalForFilename(tanggalLahir);
+          const cleanNama = nama.replace(/\s+/g, " ");
+          const cleanSekolah = asalSekolah.replace(/\s+/g, " ");
+          return `${formattedDate} - ${cleanNama} - ${cleanSekolah}.jpg`;
+        }
+        return "-";
+      }
+
+      function updateFilenamePreview() {
+        const filename = generateFilename();
+        filenameText.textContent = filename;
+        
+        if (filename !== "-") {
+          filenamePreview.style.display = "block";
+        } else {
+          filenamePreview.style.display = "none";
+        }
       }
 
       async function getAvailableCameras() {
@@ -557,11 +607,8 @@
         preview.src = dataURL;
         preview.style.display = "block";
 
-        // Set up download link with new filename format: "nama - sekolah"
-        const fileName = `${nama.replace(/\s+/g, " ")} - ${asalSekolah.replace(
-          /\s+/g,
-          " "
-        )}.jpg`;
+        // Generate filename with birth date: "YYYY-MM-DD - nama - sekolah"
+        const fileName = generateFilename();
         downloadLink.href = dataURL;
         downloadLink.download = fileName;
         downloadLink.parentElement.style.display = "block";
@@ -575,6 +622,11 @@
       stopBtn.addEventListener("click", stopCamera);
       captureBtn.addEventListener("click", capturePhoto);
       switchCameraBtn.addEventListener("click", switchCamera);
+
+      // Update filename preview when inputs change
+      namaInput.addEventListener("input", updateFilenamePreview);
+      tanggalLahirInput.addEventListener("input", updateFilenamePreview);
+      asalSekolahInput.addEventListener("input", updateFilenamePreview);
 
       // Allow Enter key to capture photo when inputs are focused
       namaInput.addEventListener("keypress", (e) => {
@@ -599,6 +651,9 @@
       window.addEventListener("beforeunload", () => {
         stopCamera();
       });
+
+      // Initialize filename preview
+      updateFilenamePreview();
     </script>
   </body>
 </html>
