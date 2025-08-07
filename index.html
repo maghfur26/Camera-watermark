@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kamera dengan Watermark</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Arial", sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+      }
+
+      .container {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        padding: 30px;
+        max-width: 800px;
+        width: 100%;
+        backdrop-filter: blur(10px);
+      }
+
+      h1 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 30px;
+        font-size: 2rem;
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .form-section {
+        margin-bottom: 30px;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        color: #555;
+        font-weight: 600;
+      }
+
+      input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #e1e5e9;
+        border-radius: 10px;
+        font-size: 16px;
+        transition: border-color 0.3s ease;
+      }
+
+      input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      }
+
+      .camera-section {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .camera-controls {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+      }
+
+      .camera-switch {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 16px;
+        background: rgba(102, 126, 234, 0.1);
+        border-radius: 20px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 14px;
+        font-weight: 600;
+        color: #667eea;
+      }
+
+      .camera-switch:hover {
+        background: rgba(102, 126, 234, 0.2);
+        transform: translateY(-2px);
+      }
+
+      .camera-switch:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none !important;
+      }
+
+      #video {
+        width: 100%;
+        max-width: 500px;
+        border-radius: 15px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        background: #000;
+      }
+
+      #canvas {
+        display: none;
+      }
+
+      .button-group {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin: 20px 0;
+      }
+
+      button {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 25px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        min-width: 120px;
+      }
+
+      .btn-primary {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        color: white;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+      }
+
+      .btn-secondary {
+        background: linear-gradient(45deg, #f093fb, #f5576c);
+        color: white;
+        box-shadow: 0 4px 15px rgba(240, 147, 251, 0.3);
+      }
+
+      .btn-secondary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(240, 147, 251, 0.4);
+      }
+
+      .btn-success {
+        background: linear-gradient(45deg, #4facfe, #00f2fe);
+        color: white;
+        box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+      }
+
+      .btn-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(79, 172, 254, 0.4);
+      }
+
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none !important;
+      }
+
+      .preview-section {
+        margin-top: 30px;
+        text-align: center;
+      }
+
+      #preview {
+        max-width: 100%;
+        border-radius: 15px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        margin: 20px 0;
+        display: none;
+      }
+
+      .download-link {
+        display: none;
+        margin-top: 15px;
+      }
+
+      .download-link a {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 600;
+        padding: 10px 20px;
+        border: 2px solid #667eea;
+        border-radius: 25px;
+        transition: all 0.3s ease;
+      }
+
+      .download-link a:hover {
+        background: #667eea;
+        color: white;
+        transform: translateY(-2px);
+      }
+
+      .error-message {
+        color: #e74c3c;
+        text-align: center;
+        margin: 10px 0;
+        padding: 10px;
+        background: rgba(231, 76, 60, 0.1);
+        border-radius: 10px;
+        border-left: 4px solid #e74c3c;
+      }
+
+      .camera-status {
+        text-align: center;
+        margin: 10px 0;
+        padding: 8px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 14px;
+      }
+
+      .camera-front {
+        background: rgba(79, 172, 254, 0.1);
+        color: #4facfe;
+        border: 1px solid rgba(79, 172, 254, 0.3);
+      }
+
+      .camera-back {
+        background: rgba(240, 147, 251, 0.1);
+        color: #f093fb;
+        border: 1px solid rgba(240, 147, 251, 0.3);
+      }
+
+      @media (max-width: 600px) {
+        .container {
+          padding: 20px;
+          margin: 10px;
+        }
+
+        h1 {
+          font-size: 1.5rem;
+        }
+
+        .button-group {
+          flex-direction: column;
+        }
+
+        button {
+          width: 100%;
+        }
+
+        .camera-controls {
+          flex-direction: column;
+          gap: 10px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>📸 Kamera dengan Watermark</h1>
+
+      <div class="form-section">
+        <div class="form-group">
+          <label for="nama">Nama Lengkap:</label>
+          <input
+            type="text"
+            id="nama"
+            placeholder="Masukkan nama lengkap"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="tanggal_lahir">Tanggal Lahir:</label>
+          <input type="date" id="tanggal_lahir" required />
+        </div>
+        <div class="form-group">
+          <label for="asal_sekolah">Asal Sekolah:</label>
+          <input
+            type="text"
+            id="asal_sekolah"
+            placeholder="Masukkan asal sekolah"
+            required
+          />
+        </div>
+      </div>
+
+      <div class="camera-section">
+        <div class="camera-controls">
+          <button id="switchCameraBtn" class="camera-switch" disabled>
+            📷 Ganti ke Kamera Belakang
+          </button>
+        </div>
+        <div id="cameraStatus" class="camera-status" style="display: none">
+          📱 Kamera Depan Aktif
+        </div>
+        <video id="video" autoplay></video>
+        <canvas id="canvas"></canvas>
+      </div>
+
+      <div class="button-group">
+        <button id="startBtn" class="btn-primary">Mulai Kamera</button>
+        <button id="captureBtn" class="btn-secondary" disabled>
+          Ambil Foto
+        </button>
+        <button id="stopBtn" class="btn-success" disabled>Stop Kamera</button>
+      </div>
+
+      <div id="errorMessage" class="error-message" style="display: none"></div>
+
+      <div class="preview-section">
+        <img id="preview" alt="Preview foto" />
+        <div class="download-link">
+          <a id="downloadLink" download="">📥 Download Foto</a>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const video = document.getElementById("video");
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+      const preview = document.getElementById("preview");
+      const downloadLink = document.getElementById("downloadLink");
+      const startBtn = document.getElementById("startBtn");
+      const captureBtn = document.getElementById("captureBtn");
+      const stopBtn = document.getElementById("stopBtn");
+      const switchCameraBtn = document.getElementById("switchCameraBtn");
+      const cameraStatus = document.getElementById("cameraStatus");
+      const errorMessage = document.getElementById("errorMessage");
+      const namaInput = document.getElementById("nama");
+      const tanggalLahirInput = document.getElementById("tanggal_lahir");
+      const asalSekolahInput = document.getElementById("asal_sekolah");
+
+      let stream = null;
+      let currentFacingMode = "user"; // 'user' for front camera, 'environment' for back camera
+      let deviceList = [];
+
+      function showError(message) {
+        errorMessage.textContent = message;
+        errorMessage.style.display = "block";
+        setTimeout(() => {
+          errorMessage.style.display = "none";
+        }, 5000);
+      }
+
+      function updateCameraStatus() {
+        if (currentFacingMode === "user") {
+          cameraStatus.textContent = "📱 Kamera Depan Aktif";
+          cameraStatus.className = "camera-status camera-front";
+          switchCameraBtn.innerHTML = "📷 Ganti ke Kamera Belakang";
+        } else {
+          cameraStatus.textContent = "📷 Kamera Belakang Aktif";
+          cameraStatus.className = "camera-status camera-back";
+          switchCameraBtn.innerHTML = "📱 Ganti ke Kamera Depan";
+        }
+        cameraStatus.style.display = "block";
+      }
+
+      function formatTanggal(dateString) {
+        const date = new Date(dateString);
+        const options = {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        };
+        return date.toLocaleDateString("id-ID", options);
+      }
+
+      async function getAvailableCameras() {
+        try {
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          deviceList = devices.filter((device) => device.kind === "videoinput");
+
+          // Enable switch button only if there are multiple cameras
+          if (deviceList.length > 1) {
+            switchCameraBtn.style.display = "flex";
+          } else {
+            switchCameraBtn.style.display = "none";
+          }
+        } catch (err) {
+          console.error("Error getting camera devices:", err);
+        }
+      }
+
+      async function startCamera() {
+        try {
+          // Stop existing stream first
+          if (stream) {
+            stream.getTracks().forEach((track) => track.stop());
+          }
+
+          const constraints = {
+            video: {
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+              facingMode: currentFacingMode,
+            },
+          };
+
+          stream = await navigator.mediaDevices.getUserMedia(constraints);
+          video.srcObject = stream;
+
+          video.addEventListener("loadedmetadata", () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+          });
+
+          // Get available cameras after starting
+          await getAvailableCameras();
+
+          updateCameraStatus();
+          startBtn.disabled = true;
+          captureBtn.disabled = false;
+          stopBtn.disabled = false;
+          switchCameraBtn.disabled = false;
+        } catch (err) {
+          console.error("Error accessing camera:", err);
+
+          // If environment camera fails, try user camera
+          if (currentFacingMode === "environment") {
+            currentFacingMode = "user";
+            showError(
+              "Kamera belakang tidak tersedia, menggunakan kamera depan."
+            );
+            try {
+              const fallbackConstraints = {
+                video: {
+                  width: { ideal: 1280 },
+                  height: { ideal: 720 },
+                  facingMode: "user",
+                },
+              };
+              stream = await navigator.mediaDevices.getUserMedia(
+                fallbackConstraints
+              );
+              video.srcObject = stream;
+
+              video.addEventListener("loadedmetadata", () => {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+              });
+
+              await getAvailableCameras();
+              updateCameraStatus();
+              startBtn.disabled = true;
+              captureBtn.disabled = false;
+              stopBtn.disabled = false;
+              switchCameraBtn.disabled = false;
+            } catch (fallbackErr) {
+              showError(
+                "Tidak dapat mengakses kamera. Pastikan browser memiliki izin kamera."
+              );
+            }
+          } else {
+            showError(
+              "Tidak dapat mengakses kamera. Pastikan browser memiliki izin kamera."
+            );
+          }
+        }
+      }
+
+      async function switchCamera() {
+        if (!stream) return;
+
+        // Toggle facing mode
+        currentFacingMode =
+          currentFacingMode === "user" ? "environment" : "user";
+
+        // Restart camera with new facing mode
+        await startCamera();
+      }
+
+      function stopCamera() {
+        if (stream) {
+          stream.getTracks().forEach((track) => track.stop());
+          stream = null;
+        }
+        video.srcObject = null;
+        startBtn.disabled = false;
+        captureBtn.disabled = true;
+        stopBtn.disabled = true;
+        switchCameraBtn.disabled = true;
+        cameraStatus.style.display = "none";
+      }
+
+      function capturePhoto() {
+        const nama = namaInput.value.trim();
+        const tanggalLahir = tanggalLahirInput.value;
+        const asalSekolah = asalSekolahInput.value.trim();
+
+        if (!nama) {
+          showError("Nama harus diisi!");
+          return;
+        }
+
+        if (!tanggalLahir) {
+          showError("Tanggal lahir harus diisi!");
+          return;
+        }
+
+        if (!asalSekolah) {
+          showError("Asal sekolah harus diisi!");
+          return;
+        }
+
+        if (!stream) {
+          showError("Kamera belum aktif!");
+          return;
+        }
+
+        // Capture video frame
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // Add watermark
+        ctx.font = "bold 24px Arial";
+        ctx.fillStyle = "white";
+        ctx.strokeStyle = "black";
+        ctx.lineWidth = 2;
+        ctx.textAlign = "left";
+
+        // Calculate watermark position (bottom-left corner with padding)
+        const padding = 20;
+        const lineHeight = 30;
+        const startY = canvas.height - (padding + lineHeight);
+
+        // Add text stroke (outline) for better visibility
+        ctx.strokeText(nama, padding, startY);
+        ctx.strokeText(
+          formatTanggal(tanggalLahir),
+          padding,
+          startY + lineHeight
+        );
+
+        // Add text fill (white color)
+        ctx.fillText(nama, padding, startY);
+        ctx.fillText(formatTanggal(tanggalLahir), padding, startY + lineHeight);
+
+        // Convert to image and show preview
+        const dataURL = canvas.toDataURL("image/jpeg", 0.9);
+        preview.src = dataURL;
+        preview.style.display = "block";
+
+        // Set up download link with new filename format: "nama - sekolah"
+        const fileName = `${nama.replace(/\s+/g, " ")} - ${asalSekolah.replace(
+          /\s+/g,
+          " "
+        )}.jpg`;
+        downloadLink.href = dataURL;
+        downloadLink.download = fileName;
+        downloadLink.parentElement.style.display = "block";
+
+        // Auto scroll to preview
+        preview.scrollIntoView({ behavior: "smooth" });
+      }
+
+      // Event listeners
+      startBtn.addEventListener("click", startCamera);
+      stopBtn.addEventListener("click", stopCamera);
+      captureBtn.addEventListener("click", capturePhoto);
+      switchCameraBtn.addEventListener("click", switchCamera);
+
+      // Allow Enter key to capture photo when inputs are focused
+      namaInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter" && !captureBtn.disabled) {
+          capturePhoto();
+        }
+      });
+
+      tanggalLahirInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter" && !captureBtn.disabled) {
+          capturePhoto();
+        }
+      });
+
+      asalSekolahInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter" && !captureBtn.disabled) {
+          capturePhoto();
+        }
+      });
+
+      // Cleanup when page is closed
+      window.addEventListener("beforeunload", () => {
+        stopCamera();
+      });
+    </script>
+  </body>
+</html>
